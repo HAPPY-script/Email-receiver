@@ -1,173 +1,161 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>📨 Email Receiver</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Receiver</title>
+
 <style>
-  :root{
-    --bg:#0c0115;
-    --panel: rgba(90,12,130,0.28);
-    --accent:#b892ff;
-    --muted:#bfb0ff;
-    --text:#f3eaff;
-    --danger:#ff5d9e;
-  }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#05000a 0%,var(--bg) 100%);font-family:Inter,Arial,Helvetica,sans-serif;color:var(--text)}
-  .wrap{max-width:920px;margin:28px auto;padding:22px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  h1{margin:0;color:var(--accent);font-size:20px}
-  .meta{color:var(--muted);font-size:13px}
-  #status{margin-top:14px;color:var(--muted);font-size:14px}
-  .emails{margin-top:18px}
-  .email{
-    background:var(--panel);
-    border:1px solid rgba(150,60,255,0.18);
-    padding:14px;border-radius:12px;margin-bottom:12px;
-    box-shadow:0 6px 24px rgba(120,50,220,0.08);
-  }
-  .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .from{font-weight:700;color:#f9ecff}
-  .sub{color:var(--muted);font-size:14px;margin-top:6px}
-  .date{color:#d8c9ff;font-size:13px}
-  .body{margin-top:10px;color:#efe6ff;white-space:pre-wrap;font-size:14px}
-  .controls{margin-top:10px;display:flex;gap:8px;align-items:center}
-  .small{font-size:13px;color:var(--muted)}
-  .btn{
-    background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--text);cursor:pointer
-  }
-  .btn.ghost{background:transparent}
-  .btn.danger{background:linear-gradient(90deg,var(--danger),#ff2f84);border:none}
-  .center{display:flex;justify-content:center}
-  .error{color:#ffb3c9;background:rgba(255,50,120,0.05);padding:8px;border-radius:8px;margin-top:10px}
-  footer{margin-top:26px;color:var(--muted);font-size:13px;text-align:center}
-  @media(max-width:600px){.row{flex-direction:column;align-items:flex-start}}
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #0d0b14;
+        color: #e6dfff;
+        overflow-x: hidden;
+    }
+
+    /* Aura tím nền */
+    .aura {
+        position: fixed;
+        width: 600px;
+        height: 600px;
+        top: -150px;
+        left: -150px;
+        background: radial-gradient(circle, rgba(140, 0, 255, 0.4), transparent 70%);
+        filter: blur(120px);
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 40px;
+        font-size: 38px;
+        color: #c38aff;
+        text-shadow: 0 0 20px #9100ff, 0 0 40px #7000e3;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+        margin-top: 30px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .email-counter {
+        font-size: 20px;
+        margin-bottom: 20px;
+        padding: 12px 18px;
+        width: fit-content;
+        border-radius: 12px;
+        background: rgba(80, 0, 150, 0.25);
+        box-shadow: 0 0 15px #5800c9;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(170, 0, 255, 0.3);
+    }
+
+    .email-card {
+        background: rgba(30, 0, 60, 0.45);
+        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(160, 0, 255, 0.2);
+        box-shadow: 0 0 15px rgba(100, 0, 150, 0.4);
+        backdrop-filter: blur(8px);
+        transition: 0.2s ease;
+    }
+
+    .email-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 25px rgba(150, 0, 255, 0.5);
+    }
+
+    .email-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .email-from {
+        color: #d4b5ff;
+        font-size: 14px;
+        margin-top: 6px;
+        opacity: 0.9;
+    }
+
+    .email-body {
+        margin-top: 15px;
+        font-size: 15px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    .note-box {
+        margin-top: 40px;
+        padding: 15px;
+        border-left: 5px solid #a300ff;
+        background: rgba(50, 0, 90, 0.35);
+        border-radius: 8px;
+        font-size: 15px;
+        box-shadow: 0 0 12px rgba(150, 0, 255, 0.4);
+    }
 </style>
 </head>
+
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>📨 Email nhận từ Gmail</h1>
-      <div class="meta">Hiển thị nội dung từ <strong>emails.json</strong></div>
+
+<div class="aura"></div>
+
+<h1>📨 Email Receiver</h1>
+
+<div class="container">
+    <div id="emailCounter" class="email-counter">Đang tải...</div>
+    <div id="emailList"></div>
+
+    <div class="note-box">
+        <b>Lưu ý:</b>  
+        Có thể sẽ phải đợi khá lâu để update Email vì phải đợi Email tới → Google phản hồi → GitHub lấy dữ liệu  
+        (khoảng hơn <b>2 phút</b>).
     </div>
-    <div class="meta">Theme: Aura tím • <span id="count">–</span> email</div>
-  </header>
-
-  <div id="status">Đang tải dữ liệu…</div>
-  <div id="error" class="error" style="display:none"></div>
-
-  <div class="emails" id="emails"></div>
-
-  <div class="center">
-    <button class="btn" id="reloadBtn">Tải lại</button>
-    <div style="width:12px"></div>
-    <button class="btn ghost" id="openJsonBtn">Mở emails.json (raw)</button>
-  </div>
-
-  <footer>
-    Lưu ý: nếu bạn dùng chức năng XÓA, hãy chỉ dùng fine-grained token và KHÔNG để token trong file public.
-  </footer>
 </div>
 
 <script>
-(function(){
-  const statusEl = document.getElementById('status');
-  const errEl = document.getElementById('error');
-  const emailsEl = document.getElementById('emails');
-  const countEl = document.getElementById('count');
+    async function loadEmails() {
+        const url = "emails.json"; // file trong repo
 
-  // Build URL for emails.json robustly (works whether index.html is on /repo/ or root)
-  const jsonUrl = new URL('emails.json', window.location.href).href;
+        try {
+            const res = await fetch(url + "?cache=" + Date.now());
+            const data = await res.json();
 
-  // sanitize -> escape html
-  function esc(s){
-    if(s === null || s === undefined) return '';
-    return String(s)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;');
-  }
+            // Cập nhật số lượng email
+            document.getElementById("emailCounter").innerText =
+                "Số lượng Email: " + data.length;
 
-  function showError(msg){
-    errEl.style.display = 'block';
-    errEl.textContent = msg;
-    statusEl.textContent = 'Có lỗi khi tải dữ liệu.';
-  }
+            // Danh sách email
+            const list = document.getElementById("emailList");
+            list.innerHTML = "";
 
-  async function load(){
-    errEl.style.display = 'none';
-    statusEl.textContent = 'Đang tải emails.json từ: ' + jsonUrl;
-    emailsEl.innerHTML = '';
-    countEl.textContent = '–';
+            data.forEach(email => {
+                const div = document.createElement("div");
+                div.className = "email-card";
+                div.innerHTML = `
+                    <div class="email-title">${email.subject}</div>
+                    <div class="email-from">📧 Từ: ${email.from}</div>
+                    <div class="email-body">${email.body}</div>
+                `;
+                list.appendChild(div);
+            });
 
-    try{
-      const res = await fetch(jsonUrl + '?_=' + Date.now(), {cache:'no-store'});
-      if(!res.ok){
-        showError(`Lỗi tải file: ${res.status} ${res.statusText}. Kiểm tra: ${jsonUrl}`);
-        return;
-      }
-      const txt = await res.text();
-      let data;
-      try{
-        data = JSON.parse(txt || '[]');
-      }catch(e){
-        showError('File emails.json không phải JSON hợp lệ. Hãy kiểm tra nội dung file trên repo.');
-        console.error('JSON parse error:', e);
-        return;
-      }
-
-      if(!Array.isArray(data)){
-        showError('emails.json phải là 1 mảng JSON (ví dụ: []).');
-        return;
-      }
-
-      statusEl.textContent = `Đã tải ${data.length} email.`;
-      countEl.textContent = data.length;
-      if(data.length === 0){
-        emailsEl.innerHTML = '<div class="small">Không có email để hiển thị.</div>';
-        return;
-      }
-
-      // Render
-      data.forEach((e, i) => {
-        const from = esc(e.from || '(Không có)');
-        const subj = esc(e.subject || '(Không có tiêu đề)');
-        const date = e.date ? new Date(e.date).toLocaleString() : '(Không có ngày)';
-        const body = esc(e.body || '');
-        const short = body.length > 1000 ? body.slice(0,1000) + '\n\n... (bị rút gọn)' : body;
-
-        const node = document.createElement('div');
-        node.className = 'email';
-        node.innerHTML = `
-          <div class="row">
-            <div>
-              <div class="from">${from}</div>
-              <div class="sub">${subj}</div>
-            </div>
-            <div class="date">${date}</div>
-          </div>
-          <div class="body">${short.replaceAll('\\n','<br>')}</div>
-        `;
-        emailsEl.appendChild(node);
-      });
-
-    }catch(err){
-      console.error(err);
-      showError('Lỗi không xác định khi fetch emails.json (xem console).');
+        } catch (err) {
+            document.getElementById("emailCounter").innerText =
+                "Không thể tải dữ liệu Email.";
+        }
     }
-  }
 
-  // buttons
-  document.getElementById('reloadBtn').addEventListener('click', load);
-  document.getElementById('openJsonBtn').addEventListener('click', () => {
-    window.open(jsonUrl, '_blank');
-  });
-
-  // auto load
-  load();
-})();
+    loadEmails();
 </script>
+
 </body>
 </html>
