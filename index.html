@@ -122,18 +122,18 @@
 </div>
 
 <script>
+    let lastVersion = null; // Lưu lần update cuối
+
     async function loadEmails() {
-        const url = "emails.json"; // file trong repo
+        const url = "emails.json";
 
         try {
             const res = await fetch(url + "?cache=" + Date.now());
             const data = await res.json();
 
-            // Cập nhật số lượng email
             document.getElementById("emailCounter").innerText =
                 "Số lượng Email: " + data.length;
 
-            // Danh sách email
             const list = document.getElementById("emailList");
             list.innerHTML = "";
 
@@ -154,7 +154,36 @@
         }
     }
 
+    // Kiểm tra nhẹ xem emails.json có đổi không
+    async function checkUpdate() {
+        try {
+            const res = await fetch("emails.json", {
+                method: "HEAD",
+                cache: "no-cache"
+            });
+
+            const newTag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+
+            if (!lastVersion) {
+                lastVersion = newTag;
+                return;
+            }
+
+            if (newTag !== lastVersion) {
+                lastVersion = newTag;
+                loadEmails(); // Chỉ load khi có thay đổi thật
+            }
+
+        } catch (e) {
+            console.log("Không thể kiểm tra update:", e);
+        }
+    }
+
+    // Load email lần đầu
     loadEmails();
+
+    // Kiểm tra mỗi 3 giây (có thể đổi)
+    setInterval(checkUpdate, 3000);
 </script>
 
 </body>
