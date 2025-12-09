@@ -126,7 +126,7 @@
     let lastVersion = null; // Lưu lần update cuối
 
     async function loadEmails() {
-        const url = "emails.json";
+        const url = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
 
         try {
             const res = await fetch(url + "?cache=" + Date.now());
