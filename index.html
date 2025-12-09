@@ -1,36 +1,130 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Email Receiver</title>
-  <style>
-    body { font-family: Arial; max-width: 700px; margin: auto; }
-    .email { border: 1px solid #ddd; padding: 12px; margin: 10px 0; border-radius: 10px; }
-    .from { font-weight: bold; }
-    .date { color: gray; font-size: 14px; }
-  </style>
+<meta charset="UTF-8">
+<title>Email Receiver</title>
+<style>
+  body {
+    font-family: Arial;
+    max-width: 820px;
+    margin: auto;
+    background: #0c0115;
+    color: #e8d9ff;
+  }
+
+  h2 {
+    text-align: center;
+    color: #d8b4ff;
+    margin-top: 30px;
+  }
+
+  .email {
+    background: rgba(100, 0, 160, 0.25);
+    border: 1px solid #6d29d9;
+    box-shadow: 0 0 25px rgba(150, 50, 255, 0.4);
+    padding: 16px;
+    margin: 15px 0;
+    border-radius: 12px;
+    backdrop-filter: blur(6px);
+  }
+
+  .from {
+    font-weight: bold;
+    font-size: 18px;
+    color: #e6c7ff;
+  }
+
+  .date {
+    color: #bfa3ff;
+    font-size: 14px;
+  }
+
+  .body {
+    margin-top: 8px;
+    color: #eedcff;
+    white-space: pre-line;
+  }
+
+  button.delete {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: #ff4b9a;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  button.delete:hover {
+    background: #ff2f84;
+  }
+</style>
 </head>
 <body>
 
 <h2>📨 Email nhận từ Gmail</h2>
-<div id="emails"></div>
+
+<div id="emails">Đang tải...</div>
 
 <script>
-fetch("emails.json")
-  .then(r => r.json())
-  .then(list => {
-    const div = document.getElementById("emails");
-    list.forEach(e => {
-      div.innerHTML += `
-        <div class="email">
-          <div class="from">👤 Từ: ${e.from}</div>
-          <div class="date">${new Date(e.date).toLocaleString()}</div>
-          <div class="body">${(e.body || "").replace(/\n/g, "<br>")}</div>
-        </div>
-      `;
-    });
-  });
-</script>
 
+const TOKEN = "YOUR_PUBLIC_GITHUB_TOKEN";  
+const REPO = "HAPPY-script/Email-receiver";
+const FILE = "emails.json";
+const API = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
+
+async function loadEmails() {
+  const res = await fetch("emails.json?" + Math.random());
+  const data = await res.json();
+  renderEmails(data);
+}
+
+function renderEmails(list) {
+  const div = document.getElementById("emails");
+  div.innerHTML = "";
+
+  list.forEach((e, i) => {
+    div.innerHTML += `
+      <div class="email">
+        <div class="from">👤 ${e.from}</div>
+        <div class="date">${new Date(e.date).toLocaleString()}</div>
+        <div class="body">${e.body.replace(/\n/g, "<br>")}</div>
+        <button class="delete" onclick="deleteEmail(${i})">Xóa Email</button>
+      </div>
+    `;
+  });
+}
+
+async function deleteEmail(index) {
+  const fileRes = await fetch(API, { headers: { Authorization: `token ${TOKEN}` } });
+  const fileData = await fileRes.json();
+  const sha = fileData.sha;
+
+  const emails = JSON.parse(atob(fileData.content));
+  emails.splice(index, 1);
+
+  const updatedContent = btoa(JSON.stringify(emails, null, 2));
+
+  await fetch(API, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "Delete email",
+      content: updatedContent,
+      sha: sha
+    })
+  });
+
+  alert("Đã xóa email!");
+  loadEmails();
+}
+
+loadEmails();
+
+</script>
 </body>
 </html>
