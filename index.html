@@ -158,7 +158,7 @@
     // Kiểm tra nhẹ xem emails.json có đổi không
     async function checkUpdate() {
         try {
-            const res = await fetch("emails.json", {
+            const res = await fetch("https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json", {
                 method: "HEAD",
                 cache: "no-cache"
             });
