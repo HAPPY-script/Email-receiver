@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Email Receiver</title>
+  <style>
+    body { font-family: Arial; max-width: 700px; margin: auto; }
+    .email { border: 1px solid #ddd; padding: 12px; margin: 10px 0; border-radius: 10px; }
+    .from { font-weight: bold; }
+    .date { color: gray; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<h2>📨 Email nhận từ Gmail</h2>
+<div id="emails"></div>
+
+<script>
+fetch("emails.json")
+  .then(r => r.json())
+  .then(list => {
+    const div = document.getElementById("emails");
+    list.forEach(e => {
+      div.innerHTML += `
+        <div class="email">
+          <div class="from">👤 Từ: ${e.from}</div>
+          <div class="date">${new Date(e.date).toLocaleString()}</div>
+          <div class="body">${(e.body || "").replace(/\n/g, "<br>")}</div>
+        </div>
+      `;
+    });
+  });
+</script>
+
+</body>
+</html>
