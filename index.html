@@ -1,130 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Email Receiver</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>📨 Email Receiver</title>
 <style>
-  body {
-    font-family: Arial;
-    max-width: 820px;
-    margin: auto;
-    background: #0c0115;
-    color: #e8d9ff;
+  :root{
+    --bg:#0c0115;
+    --panel: rgba(90,12,130,0.28);
+    --accent:#b892ff;
+    --muted:#bfb0ff;
+    --text:#f3eaff;
+    --danger:#ff5d9e;
   }
-
-  h2 {
-    text-align: center;
-    color: #d8b4ff;
-    margin-top: 30px;
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#05000a 0%,var(--bg) 100%);font-family:Inter,Arial,Helvetica,sans-serif;color:var(--text)}
+  .wrap{max-width:920px;margin:28px auto;padding:22px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  h1{margin:0;color:var(--accent);font-size:20px}
+  .meta{color:var(--muted);font-size:13px}
+  #status{margin-top:14px;color:var(--muted);font-size:14px}
+  .emails{margin-top:18px}
+  .email{
+    background:var(--panel);
+    border:1px solid rgba(150,60,255,0.18);
+    padding:14px;border-radius:12px;margin-bottom:12px;
+    box-shadow:0 6px 24px rgba(120,50,220,0.08);
   }
-
-  .email {
-    background: rgba(100, 0, 160, 0.25);
-    border: 1px solid #6d29d9;
-    box-shadow: 0 0 25px rgba(150, 50, 255, 0.4);
-    padding: 16px;
-    margin: 15px 0;
-    border-radius: 12px;
-    backdrop-filter: blur(6px);
+  .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .from{font-weight:700;color:#f9ecff}
+  .sub{color:var(--muted);font-size:14px;margin-top:6px}
+  .date{color:#d8c9ff;font-size:13px}
+  .body{margin-top:10px;color:#efe6ff;white-space:pre-wrap;font-size:14px}
+  .controls{margin-top:10px;display:flex;gap:8px;align-items:center}
+  .small{font-size:13px;color:var(--muted)}
+  .btn{
+    background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:var(--text);cursor:pointer
   }
-
-  .from {
-    font-weight: bold;
-    font-size: 18px;
-    color: #e6c7ff;
-  }
-
-  .date {
-    color: #bfa3ff;
-    font-size: 14px;
-  }
-
-  .body {
-    margin-top: 8px;
-    color: #eedcff;
-    white-space: pre-line;
-  }
-
-  button.delete {
-    margin-top: 10px;
-    padding: 6px 12px;
-    background: #ff4b9a;
-    border: none;
-    color: white;
-    cursor: pointer;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-
-  button.delete:hover {
-    background: #ff2f84;
-  }
+  .btn.ghost{background:transparent}
+  .btn.danger{background:linear-gradient(90deg,var(--danger),#ff2f84);border:none}
+  .center{display:flex;justify-content:center}
+  .error{color:#ffb3c9;background:rgba(255,50,120,0.05);padding:8px;border-radius:8px;margin-top:10px}
+  footer{margin-top:26px;color:var(--muted);font-size:13px;text-align:center}
+  @media(max-width:600px){.row{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>📨 Email nhận từ Gmail</h1>
+      <div class="meta">Hiển thị nội dung từ <strong>emails.json</strong></div>
+    </div>
+    <div class="meta">Theme: Aura tím • <span id="count">–</span> email</div>
+  </header>
 
-<h2>📨 Email nhận từ Gmail</h2>
+  <div id="status">Đang tải dữ liệu…</div>
+  <div id="error" class="error" style="display:none"></div>
 
-<div id="emails">Đang tải...</div>
+  <div class="emails" id="emails"></div>
+
+  <div class="center">
+    <button class="btn" id="reloadBtn">Tải lại</button>
+    <div style="width:12px"></div>
+    <button class="btn ghost" id="openJsonBtn">Mở emails.json (raw)</button>
+  </div>
+
+  <footer>
+    Lưu ý: nếu bạn dùng chức năng XÓA, hãy chỉ dùng fine-grained token và KHÔNG để token trong file public.
+  </footer>
+</div>
 
 <script>
+(function(){
+  const statusEl = document.getElementById('status');
+  const errEl = document.getElementById('error');
+  const emailsEl = document.getElementById('emails');
+  const countEl = document.getElementById('count');
 
-const TOKEN = "YOUR_PUBLIC_GITHUB_TOKEN";  
-const REPO = "HAPPY-script/Email-receiver";
-const FILE = "emails.json";
-const API = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
+  // Build URL for emails.json robustly (works whether index.html is on /repo/ or root)
+  const jsonUrl = new URL('emails.json', window.location.href).href;
 
-async function loadEmails() {
-  const res = await fetch("emails.json?" + Math.random());
-  const data = await res.json();
-  renderEmails(data);
-}
+  // sanitize -> escape html
+  function esc(s){
+    if(s === null || s === undefined) return '';
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;');
+  }
 
-function renderEmails(list) {
-  const div = document.getElementById("emails");
-  div.innerHTML = "";
+  function showError(msg){
+    errEl.style.display = 'block';
+    errEl.textContent = msg;
+    statusEl.textContent = 'Có lỗi khi tải dữ liệu.';
+  }
 
-  list.forEach((e, i) => {
-    div.innerHTML += `
-      <div class="email">
-        <div class="from">👤 ${e.from}</div>
-        <div class="date">${new Date(e.date).toLocaleString()}</div>
-        <div class="body">${e.body.replace(/\n/g, "<br>")}</div>
-        <button class="delete" onclick="deleteEmail(${i})">Xóa Email</button>
-      </div>
-    `;
+  async function load(){
+    errEl.style.display = 'none';
+    statusEl.textContent = 'Đang tải emails.json từ: ' + jsonUrl;
+    emailsEl.innerHTML = '';
+    countEl.textContent = '–';
+
+    try{
+      const res = await fetch(jsonUrl + '?_=' + Date.now(), {cache:'no-store'});
+      if(!res.ok){
+        showError(`Lỗi tải file: ${res.status} ${res.statusText}. Kiểm tra: ${jsonUrl}`);
+        return;
+      }
+      const txt = await res.text();
+      let data;
+      try{
+        data = JSON.parse(txt || '[]');
+      }catch(e){
+        showError('File emails.json không phải JSON hợp lệ. Hãy kiểm tra nội dung file trên repo.');
+        console.error('JSON parse error:', e);
+        return;
+      }
+
+      if(!Array.isArray(data)){
+        showError('emails.json phải là 1 mảng JSON (ví dụ: []).');
+        return;
+      }
+
+      statusEl.textContent = `Đã tải ${data.length} email.`;
+      countEl.textContent = data.length;
+      if(data.length === 0){
+        emailsEl.innerHTML = '<div class="small">Không có email để hiển thị.</div>';
+        return;
+      }
+
+      // Render
+      data.forEach((e, i) => {
+        const from = esc(e.from || '(Không có)');
+        const subj = esc(e.subject || '(Không có tiêu đề)');
+        const date = e.date ? new Date(e.date).toLocaleString() : '(Không có ngày)';
+        const body = esc(e.body || '');
+        const short = body.length > 1000 ? body.slice(0,1000) + '\n\n... (bị rút gọn)' : body;
+
+        const node = document.createElement('div');
+        node.className = 'email';
+        node.innerHTML = `
+          <div class="row">
+            <div>
+              <div class="from">${from}</div>
+              <div class="sub">${subj}</div>
+            </div>
+            <div class="date">${date}</div>
+          </div>
+          <div class="body">${short.replaceAll('\\n','<br>')}</div>
+        `;
+        emailsEl.appendChild(node);
+      });
+
+    }catch(err){
+      console.error(err);
+      showError('Lỗi không xác định khi fetch emails.json (xem console).');
+    }
+  }
+
+  // buttons
+  document.getElementById('reloadBtn').addEventListener('click', load);
+  document.getElementById('openJsonBtn').addEventListener('click', () => {
+    window.open(jsonUrl, '_blank');
   });
-}
 
-async function deleteEmail(index) {
-  const fileRes = await fetch(API, { headers: { Authorization: `token ${TOKEN}` } });
-  const fileData = await fileRes.json();
-  const sha = fileData.sha;
-
-  const emails = JSON.parse(atob(fileData.content));
-  emails.splice(index, 1);
-
-  const updatedContent = btoa(JSON.stringify(emails, null, 2));
-
-  await fetch(API, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${TOKEN}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: "Delete email",
-      content: updatedContent,
-      sha: sha
-    })
-  });
-
-  alert("Đã xóa email!");
-  loadEmails();
-}
-
-loadEmails();
-
+  // auto load
+  load();
+})();
 </script>
 </body>
 </html>
