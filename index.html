@@ -123,7 +123,8 @@
 </div>
 
 <script>
-    let lastVersion = null; // Lưu lần update cuối
+    // lưu dữ liệu email lần cuối
+    let lastData = null;
 
     async function loadEmails() {
         const url = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
@@ -131,6 +132,9 @@
         try {
             const res = await fetch(url + "?cache=" + Date.now());
             const data = await res.json();
+
+            // Cập nhật dữ liệu đã load để hệ thống nhớ
+            lastData = JSON.stringify(data);
 
             document.getElementById("emailCounter").innerText =
                 "Số lượng Email: " + data.length;
@@ -155,24 +159,19 @@
         }
     }
 
-    // Kiểm tra nhẹ xem emails.json có đổi không
+    // kiểm tra cập nhật
     async function checkUpdate() {
         try {
-            const res = await fetch("https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json", {
-                method: "HEAD",
-                cache: "no-cache"
-            });
+            const url = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
+            const res = await fetch(url + "?v=" + Date.now());
+            const data = await res.json();
 
-            const newTag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+            const jsonText = JSON.stringify(data);
 
-            if (!lastVersion) {
-                lastVersion = newTag;
-                return;
-            }
-
-            if (newTag !== lastVersion) {
-                lastVersion = newTag;
-                loadEmails(); // Chỉ load khi có thay đổi thật
+            // Nếu khác bản cũ → reload
+            if (jsonText !== lastData) {
+                lastData = jsonText;
+                loadEmails();
             }
 
         } catch (e) {
@@ -183,8 +182,8 @@
     // Load email lần đầu
     loadEmails();
 
-    // Kiểm tra mỗi 5 giây (có thể đổi)
-    setInterval(checkUpdate, 5000);
+    // Kiểm tra mỗi 3 giây
+    setInterval(checkUpdate, 3000);
 </script>
 
 </body>
