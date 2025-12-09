@@ -1,8 +1,1 @@
-[
-  {
-    "from": "HAPPY <notifications@github.com>",
-    "subject": "[HAPPY-script/Email-receiver] Run cancelled: pages build and deployment - main (e1a70f1)",
-    "body": "[HAPPY-script/Email-receiver] pages build and deployment workflow run\r\n\r\nRepository: HAPPY-script/Email-receiver\r\nWorkflow: pages build and deployment\r\nDuration: 29.0 seconds\r\nFinished: 2025-12-09 10:29:16 UTC\r\n\r\nView results: https://github.com/HAPPY-script/Email-receiver/actions/runs/20060247859\r\n\r\nJobs:\r\n  * build succeeded (0 annotations)\r\n  * deploy cancelled (0 annotations)\r\n  * report-build-status cancelled (1 annotation)\r\n\r\n-- \r\nYou are receiving this because you are subscribed to this thread.\r\nManage your GitHub Actions notifications: https://github.com/settings/notifications\r\n",
-    "date": "2025-12-09T10:29:36.000Z"
-  }
-]
+[]
