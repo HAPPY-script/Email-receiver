@@ -123,114 +123,67 @@
 </div>
 
 <script>
-  // URL raw của file trên branch "data"
-  const RAW_JSON = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
+    // lưu dữ liệu email lần cuối
+    let lastData = null;
 
-  let lastText = null; // lưu nội dung JSON dạng text lần cuối (so sánh)
-  let pollingInterval = 3000; // 3s, có thể thay thành 5000 hoặc 10000 nếu muốn giảm request
+    async function loadEmails() {
+        const url = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
 
-  // Render UI từ object JSON
-  function renderEmails(data) {
-    const counter = document.getElementById("emailCounter");
-    const list = document.getElementById("emailList");
+        try {
+            const res = await fetch(url + "?cache=" + Date.now());
+            const data = await res.json();
 
-    // nếu data không là mảng, xử lý an toàn
-    if (!Array.isArray(data)) {
-      counter.innerText = "Dữ liệu không hợp lệ.";
-      list.innerHTML = "";
-      return;
-    }
+            // Cập nhật dữ liệu đã load để hệ thống nhớ
+            lastData = JSON.stringify(data);
 
-    // nếu rỗng, xóa list và thông báo rõ ràng
-    if (data.length === 0) {
-      counter.innerText = "Số lượng Email: 0";
-      list.innerHTML = `<div class="email-card" style="opacity:0.9">Không có email nào.</div>`;
-      return;
-    }
+            document.getElementById("emailCounter").innerText =
+                "Số lượng Email: " + data.length;
 
-    counter.innerText = "Số lượng Email: " + data.length;
-    list.innerHTML = "";
+            const list = document.getElementById("emailList");
+            list.innerHTML = "";
 
-    // hiển thị email (mới nhất ở trên cùng nếu dữ liệu đã được đảo trước đó)
-    data.forEach(email => {
-      const div = document.createElement("div");
-      div.className = "email-card";
-      // an toàn: escape một chút nội dung tránh HTML injection
-      const subj = (email.subject || "(Không tiêu đề)").replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-      const from = (email.from || "(Không có)").replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-      const body = (email.body || "").replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
-      div.innerHTML = `
-        <div class="email-title">${subj}</div>
-        <div class="email-from">📧 Từ: ${from}</div>
-        <div class="email-body">${body}</div>
-      `;
-      list.appendChild(div);
-    });
-  }
+            data.forEach(email => {
+                const div = document.createElement("div");
+                div.className = "email-card";
+                div.innerHTML = `
+                    <div class="email-title">${email.subject}</div>
+                    <div class="email-from">📧 Từ: ${email.from}</div>
+                    <div class="email-body">${email.body}</div>
+                `;
+                list.appendChild(div);
+            });
 
-  // Load và render ngay (full fetch)
-  async function loadEmailsNow() {
-    try {
-      const res = await fetch(RAW_JSON + "?t=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) {
-        console.warn("loadEmailsNow: fetch failed", res.status, res.statusText);
-        document.getElementById("emailCounter").innerText = "Không thể tải dữ liệu Email.";
-        return;
-      }
-      const text = await res.text();
-      lastText = text; // cập nhật lastText
-      let data = [];
-      try { data = JSON.parse(text || "[]"); } catch(e) {
-        console.error("JSON parse error:", e);
-        document.getElementById("emailCounter").innerText = "Dữ liệu JSON không hợp lệ.";
-        return;
-      }
-
-      renderEmails(data);
-    } catch (err) {
-      console.error("loadEmailsNow error:", err);
-      document.getElementById("emailCounter").innerText = "Không thể tải dữ liệu Email.";
-    }
-  }
-
-  // Kiểm tra thay đổi bằng cách lấy text và so sánh với lastText
-  async function checkUpdate() {
-    try {
-      // tải text mới (cache-bust bằng timestamp)
-      const res = await fetch(RAW_JSON + "?t=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) {
-        console.warn("checkUpdate: fetch failed", res.status, res.statusText);
-        return;
-      }
-      const newText = await res.text();
-
-      // Nếu lastText chưa có (lần đầu), set và return (chúng ta sẽ load đầy đủ lúc khởi tạo)
-      if (lastText === null) {
-        lastText = newText;
-        return;
-      }
-
-      // Nếu thay đổi hoàn toàn (kể cả từ email list -> "[]"), thì load và render
-      if (newText !== lastText) {
-        lastText = newText;
-        // parse và render ngay (tránh gọi loadEmailsNow để giảm code), nhưng có thể tái sử dụng:
-        let data = [];
-        try { data = JSON.parse(newText || "[]"); } catch(e) {
-          console.error("parse error on updated text:", e);
-          return;
+        } catch (err) {
+            document.getElementById("emailCounter").innerText =
+                "Không thể tải dữ liệu Email.";
         }
-        renderEmails(data);
-      }
-    } catch (e) {
-      console.log("Không thể kiểm tra update:", e);
     }
-  }
 
-  // Khi trang mở: tải 1 lần đầy đủ
-  loadEmailsNow().then(() => {
-    // sau lần load ban đầu, bắt đầu polling
-    setInterval(checkUpdate, pollingInterval);
-  });
+    // kiểm tra cập nhật
+    async function checkUpdate() {
+        try {
+            const url = "https://raw.githubusercontent.com/HAPPY-script/Email-receiver/data/emails.json";
+            const res = await fetch(url + "?v=" + Date.now());
+            const data = await res.json();
+
+            const jsonText = JSON.stringify(data);
+
+            // Nếu khác bản cũ → reload
+            if (jsonText !== lastData) {
+                lastData = jsonText;
+                loadEmails();
+            }
+
+        } catch (e) {
+            console.log("Không thể kiểm tra update:", e);
+        }
+    }
+
+    // Load email lần đầu
+    loadEmails();
+
+    // Kiểm tra mỗi 3 giây
+    setInterval(checkUpdate, 3000);
 </script>
 
 </body>
